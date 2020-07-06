@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -18,7 +19,6 @@ impl GitRepo {
     }
 
     pub fn append_to_exclude_list(&self, entries: &Vec<String>) -> Result<(), io::Error> {
-        use std::fs::OpenOptions;
         use std::io::Write;
 
         let mut exclude_file = OpenOptions::new()
@@ -27,9 +27,17 @@ impl GitRepo {
             .open(self.exclude_file_path()?)?;
 
         for entry in entries {
-            writeln!(exclude_file, "{}", entry);
+            writeln!(exclude_file, "{}", entry)?;
         }
 
+        Ok(())
+    }
+
+    pub fn clear_exclude_list(&self) -> Result<(), io::Error> {
+        let _ = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(self.exclude_file_path()?)?;
         Ok(())
     }
 

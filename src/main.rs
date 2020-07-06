@@ -9,6 +9,19 @@ fn main() {
         .author("Vyacheslav P. <vyacheslav.pukhanov@gmail.com>")
         .about("Locally exclude files from Git index")
         .arg(
+            Arg::with_name("force")
+                .short('f')
+                .long("force")
+                .about("Ignore any additional prompts, assume 'yes' as an answer"),
+        )
+        .arg(
+            Arg::with_name("clear")
+                .conflicts_with_all(&["list", "file"])
+                .short('c')
+                .long("clear")
+                .about("Remove all entries from the exclude file"),
+        )
+        .arg(
             Arg::with_name("list")
                 .conflicts_with("file")
                 .short('l')
@@ -17,7 +30,7 @@ fn main() {
         )
         .arg(
             Arg::with_name("file")
-                .required_unless("list")
+                .required_unless_one(&["list", "clear"])
                 .index(1)
                 .multiple(true)
                 .about("Files to exclude from index"),
@@ -39,14 +52,35 @@ fn main() {
         git_repo.dir.to_str().unwrap()
     );
 
-    if matches.is_present("list") {
+    let force = matches.is_present("force");
+
+    if matches.is_present("clear") {
+        clear_exclude_list(&git_repo, force);
+    } else if matches.is_present("list") {
         print_exclude_list(&git_repo);
     } else {
         let files = matches.values_of_lossy("file").unwrap_or_else(|| {
             report_error("No exclude entries provided");
         });
 
-        add_entries_to_exclude_list(&git_repo, &files);
+        add_entries_to_exclude_list(&git_repo, &files, force);
+    }
+}
+
+fn clear_exclude_list(repo: &git::GitRepo, force: bool) {
+    if !force
+        && !dialoguer::Confirm::new()
+            .with_prompt("Reset the local exclude list?")
+            .interact()
+            .unwrap_or(false)
+    {
+        return;
+    }
+
+    if repo.clear_exclude_list().is_ok() {
+        println!("Successfully reset the local exclude file");
+    } else {
+        report_error("Unable to reset the local exclude file");
     }
 }
 
@@ -59,10 +93,10 @@ fn print_exclude_list(repo: &git::GitRepo) {
     entries.for_each(|entry| println!("  {}", entry));
 }
 
-fn add_entries_to_exclude_list(repo: &git::GitRepo, entries: &Vec<String>) {
+fn add_entries_to_exclude_list(repo: &git::GitRepo, entries: &Vec<String>, force: bool) {
     let entries_count = entries.len();
 
-    if entries_count > 1 {
+    if !force && entries_count > 1 {
         println!("Inserting {} entries into the exclude file.", entries_count);
         println!("Hint: if you want to insert wildcard characters (*, ?, ...) into the exclude file as is, escape them with backslash '\\'.");
 
