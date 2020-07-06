@@ -19,7 +19,7 @@ fn main() {
             Arg::with_name("file")
                 .required_unless("list")
                 .index(1)
-                .multiple_values(true)
+                .multiple(true)
                 .about("Files to exclude from index"),
         )
         .get_matches();
@@ -42,7 +42,11 @@ fn main() {
     if matches.is_present("list") {
         print_exclude_list(&git_repo);
     } else {
-        println!("Add mode");
+        let files = matches.values_of_lossy("file").unwrap_or_else(|| {
+            report_error("No exclude entries provided");
+        });
+
+        add_entries_to_exclude_list(&git_repo, &files);
     }
 }
 
@@ -53,6 +57,32 @@ fn print_exclude_list(repo: &git::GitRepo) {
 
     println!("\nEntries of the exclude file:");
     entries.for_each(|entry| println!("  {}", entry));
+}
+
+fn add_entries_to_exclude_list(repo: &git::GitRepo, entries: &Vec<String>) {
+    let entries_count = entries.len();
+
+    if entries_count > 1 {
+        println!("Inserting {} entries into the exclude file.", entries_count);
+        println!("Hint: if you want to insert wildcard characters (*, ?, ...) into the exclude file as is, escape them with backslash '\\'.");
+
+        if !dialoguer::Confirm::new()
+            .with_prompt("Continue?")
+            .interact()
+            .unwrap_or(false)
+        {
+            return;
+        }
+    }
+
+    if repo.append_to_exclude_list(entries).is_ok() {
+        println!("Successfully inserted entries into the exclude file:");
+        for entry in entries {
+            println!("  {}", entry);
+        }
+    } else {
+        report_error("Writing entries into the exclude file failed");
+    }
 }
 
 fn report_error(description: &str) -> ! {

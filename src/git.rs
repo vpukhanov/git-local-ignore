@@ -10,15 +10,27 @@ impl GitRepo {
     pub fn exclude_list(&self) -> Result<impl Iterator<Item = String>, io::Error> {
         use io::BufRead;
 
-        let exclude_file = self.exclude_file()?;
+        let exclude_file = File::open(self.exclude_file_path()?)?;
         Ok(io::BufReader::new(exclude_file)
             .lines()
             .filter_map(Result::ok)
             .filter(|line| !line.starts_with("#")))
     }
 
-    fn exclude_file(&self) -> Result<File, io::Error> {
-        File::open(self.exclude_file_path()?)
+    pub fn append_to_exclude_list(&self, entries: &Vec<String>) -> Result<(), io::Error> {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+
+        let mut exclude_file = OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(self.exclude_file_path()?)?;
+
+        for entry in entries {
+            writeln!(exclude_file, "{}", entry);
+        }
+
+        Ok(())
     }
 
     fn exclude_file_path(&self) -> Result<PathBuf, io::Error> {
