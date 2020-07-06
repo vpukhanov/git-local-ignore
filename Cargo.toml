@@ -8,7 +8,7 @@ description = "Locally exclude files from being tracked by Git (without adding t
 readme = "README.md"
 repository = "https://github.com/vpukhanov/git-local-ignore"
 homepage = "https://github.com/vpukhanov/git-local-ignore"
-keywords = ["cli", "git", "vcs", "ignore", "gitignore", "exclude"]
+keywords = ["cli", "git", "gitignore", "ignore", "exclude"]
 categories = ["command-line-utilities"]
 
 [profile.release] # Optimize the release build for size
