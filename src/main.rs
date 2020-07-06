@@ -7,7 +7,7 @@ fn main() {
     let matches = App::new("git local-ignore")
         .version(env!("CARGO_PKG_VERSION"))
         .author("Vyacheslav P. <vyacheslav.pukhanov@gmail.com>")
-        .about("Locally exclude files from Git index")
+        .about("Locally exclude files from the Git index")
         .arg(
             Arg::with_name("force")
                 .short('f')
