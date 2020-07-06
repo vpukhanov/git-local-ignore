@@ -4,7 +4,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 pub struct GitRepo {
-    pub dir: PathBuf,
+    pub repo_dir: PathBuf,
+    root_dir: PathBuf,
 }
 
 impl GitRepo {
@@ -18,7 +19,11 @@ impl GitRepo {
             .filter(|line| !line.starts_with("#")))
     }
 
-    pub fn append_to_exclude_list(&self, entries: &Vec<String>) -> Result<(), io::Error> {
+    pub fn append_to_exclude_list(
+        &self,
+        base_path: &PathBuf,
+        entries: &Vec<String>,
+    ) -> Result<(), io::Error> {
         use std::io::Write;
 
         let mut exclude_file = OpenOptions::new()
@@ -27,7 +32,15 @@ impl GitRepo {
             .open(self.exclude_file_path()?)?;
 
         for entry in entries {
-            writeln!(exclude_file, "{}", entry)?;
+            let absolute_entry = base_path.join(entry);
+
+            // Try to convert the entry to a path relative to the repo's root dir
+            if let Some(relative_entry) = pathdiff::diff_paths(absolute_entry, &self.root_dir) {
+                let relative_str = relative_entry.to_string_lossy();
+                writeln!(exclude_file, "{}", relative_str)?;
+            } else {
+                writeln!(exclude_file, "{}", entry)?;
+            }
         }
 
         Ok(())
@@ -42,7 +55,7 @@ impl GitRepo {
     }
 
     fn exclude_file_path(&self) -> Result<PathBuf, io::Error> {
-        let exclude_file_path = self.dir.join("info/exclude");
+        let exclude_file_path = self.repo_dir.join("info/exclude");
 
         if !exclude_file_path.exists() {
             File::create(&exclude_file_path)?;
@@ -60,7 +73,8 @@ pub fn find_repo(target_dir: &PathBuf) -> Option<GitRepo> {
 
         if potential_repo.exists() {
             return Some(GitRepo {
-                dir: potential_repo,
+                root_dir: PathBuf::from(dir),
+                repo_dir: potential_repo,
             });
         }
 

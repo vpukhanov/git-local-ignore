@@ -1,5 +1,6 @@
 use clap::{App, Arg};
 use std::env;
+use std::path::PathBuf;
 
 mod git;
 
@@ -49,7 +50,7 @@ fn main() {
 
     println!(
         "Found .git repository in {}",
-        git_repo.dir.to_str().unwrap()
+        git_repo.repo_dir.to_str().unwrap()
     );
 
     let force = matches.is_present("force");
@@ -63,7 +64,7 @@ fn main() {
             report_error("No exclude entries provided");
         });
 
-        add_entries_to_exclude_list(&git_repo, &files, force);
+        add_entries_to_exclude_list(&git_repo, &working_dir, &files, force);
     }
 }
 
@@ -93,7 +94,12 @@ fn print_exclude_list(repo: &git::GitRepo) {
     entries.for_each(|entry| println!("  {}", entry));
 }
 
-fn add_entries_to_exclude_list(repo: &git::GitRepo, entries: &Vec<String>, force: bool) {
+fn add_entries_to_exclude_list(
+    repo: &git::GitRepo,
+    base_path: &PathBuf,
+    entries: &Vec<String>,
+    force: bool,
+) {
     let entries_count = entries.len();
 
     if !force && entries_count > 1 {
@@ -109,7 +115,7 @@ fn add_entries_to_exclude_list(repo: &git::GitRepo, entries: &Vec<String>, force
         }
     }
 
-    if repo.append_to_exclude_list(entries).is_ok() {
+    if repo.append_to_exclude_list(base_path, entries).is_ok() {
         println!("Successfully inserted entries into the exclude file:");
         for entry in entries {
             println!("  {}", entry);
