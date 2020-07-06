@@ -11,6 +11,12 @@ fn main() {
                 .long("list")
                 .about("List currently excluded files"),
         )
+        .arg(
+            Arg::with_name("file")
+                .index(1)
+                .multiple_values(true)
+                .about("Files to exclude from index"),
+        )
         .get_matches();
 
     if matches.is_present("list") {
