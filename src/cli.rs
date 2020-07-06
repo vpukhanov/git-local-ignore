@@ -21,10 +21,10 @@ pub fn clear_exclude_list(repo: &git::GitRepo, force: bool) {
 
 pub fn print_exclude_list(repo: &git::GitRepo) {
     let entries = repo.exclude_list().unwrap_or_else(|_err| {
-        report_error("Could not load entries of the exclude file");
+        report_error("Could not load entries from the exclude file");
     });
 
-    println!("\nEntries of the exclude file:");
+    println!("\nEntries in the exclude file:");
     entries.for_each(|entry| println!("  {}", entry));
 }
 
@@ -38,7 +38,7 @@ pub fn add_entries_to_exclude_list(
 
     if !force && entries_count > 1 {
         println!("Inserting {} entries into the exclude file.", entries_count);
-        println!("Hint: if you want to insert wildcard characters (*, ?, ...) into the exclude file as is, escape them with backslash '\\'.");
+        println!("Hint: if you want to insert glob patterns with wildcard characters (*, ?, ...) into the exclude file as is, escape them with backslash '\\'.");
 
         if !dialoguer::Confirm::new()
             .with_prompt("Continue?")

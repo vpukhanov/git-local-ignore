@@ -8,33 +8,35 @@ fn main() {
     let matches = App::new("git local-ignore")
         .version(env!("CARGO_PKG_VERSION"))
         .author("Vyacheslav P. <vyacheslav.pukhanov@gmail.com>")
-        .about("Locally exclude files from the Git index")
+        .about(
+            "Locally exclude files from being tracked by Git (without adding them to .gitignore)",
+        )
         .arg(
             Arg::with_name("force")
                 .short('f')
                 .long("force")
-                .about("Ignore any additional prompts, assume 'yes' as an answer"),
+                .about("Ignore any additional prompts, assumes 'yes' as the answer"),
         )
         .arg(
             Arg::with_name("clear")
                 .conflicts_with_all(&["list", "file"])
                 .short('c')
                 .long("clear")
-                .about("Remove all entries from the exclude file"),
+                .about("Clear all entries from the exclude file"),
         )
         .arg(
             Arg::with_name("list")
                 .conflicts_with("file")
                 .short('l')
                 .long("list")
-                .about("List currently excluded files"),
+                .about("List all entries in the exclude file"),
         )
         .arg(
             Arg::with_name("file")
                 .required_unless_one(&["list", "clear"])
                 .index(1)
                 .multiple(true)
-                .about("Files to exclude from index"),
+                .about("Entries to add to the exclude file"),
         )
         .get_matches();
 
@@ -61,7 +63,7 @@ fn main() {
         cli::print_exclude_list(&git_repo);
     } else {
         let files = matches.values_of_lossy("file").unwrap_or_else(|| {
-            cli::report_error("No exclude entries provided");
+            cli::report_error("No entries to exclude provided");
         });
 
         cli::add_entries_to_exclude_list(&git_repo, &working_dir, &files, force);
