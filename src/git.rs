@@ -1,7 +1,35 @@
+use std::fs::File;
+use std::io;
 use std::path::{Path, PathBuf};
 
 pub struct GitRepo {
     pub dir: PathBuf,
+}
+
+impl GitRepo {
+    pub fn exclude_list(&self) -> Result<impl Iterator<Item = String>, io::Error> {
+        use io::BufRead;
+
+        let exclude_file = self.exclude_file()?;
+        Ok(io::BufReader::new(exclude_file)
+            .lines()
+            .filter_map(Result::ok)
+            .filter(|line| !line.starts_with("#")))
+    }
+
+    fn exclude_file(&self) -> Result<File, io::Error> {
+        File::open(self.exclude_file_path()?)
+    }
+
+    fn exclude_file_path(&self) -> Result<PathBuf, io::Error> {
+        let exclude_file_path = self.dir.join("info/exclude");
+
+        if !exclude_file_path.exists() {
+            File::create(&exclude_file_path)?;
+        }
+
+        Ok(exclude_file_path)
+    }
 }
 
 pub fn find_repo(target_dir: &PathBuf) -> Option<GitRepo> {

@@ -10,12 +10,14 @@ fn main() {
         .about("Locally exclude files from Git index")
         .arg(
             Arg::with_name("list")
+                .conflicts_with("file")
                 .short('l')
                 .long("list")
                 .about("List currently excluded files"),
         )
         .arg(
             Arg::with_name("file")
+                .required_unless("list")
                 .index(1)
                 .multiple_values(true)
                 .about("Files to exclude from index"),
@@ -23,13 +25,12 @@ fn main() {
         .get_matches();
 
     let working_dir = env::current_dir().unwrap_or_else(|_err| {
-        report_error("Unable to access current working dir", 1);
+        report_error("Unable to access current working dir");
     });
 
     let git_repo = git::find_repo(&working_dir).unwrap_or_else(|| {
         report_error(
             "Unable to find git repository in current directory or any of the parent directories",
-            1,
         );
     });
 
@@ -39,13 +40,22 @@ fn main() {
     );
 
     if matches.is_present("list") {
-        println!("List mode");
+        print_exclude_list(&git_repo);
     } else {
         println!("Add mode");
     }
 }
 
-fn report_error(description: &str, exit_code: i32) -> ! {
+fn print_exclude_list(repo: &git::GitRepo) {
+    let entries = repo.exclude_list().unwrap_or_else(|_err| {
+        report_error("Could not load entries of the exclude file");
+    });
+
+    println!("\nEntries of the exclude file:");
+    entries.for_each(|entry| println!("  {}", entry));
+}
+
+fn report_error(description: &str) -> ! {
     eprintln!("❌ {}", description);
-    std::process::exit(exit_code);
+    std::process::exit(1);
 }
