@@ -9,6 +9,10 @@ but is completely local and not included in the repository itself.
 
     cargo install git-local-ignore
     
+Or using `brew` on macOS:
+
+    brew install vpukhanov/tools/git-local-ignore
+    
 ## Usage
 
     # Add files to exclude list
