@@ -16,7 +16,7 @@ Or using `brew` on macOS:
 ## Usage
 
     # Add files to exclude list
-    git-local-ignore filename1 filenam2
+    git-local-ignore filename1 filename2
     
     # Add multiple files to exclude list using glob pattern
     git-local-ignore filename*.txt
@@ -31,4 +31,4 @@ Or using `brew` on macOS:
     git-local-ignore --clear
     
     # Display help
-    git-local-ignore--help
+    git-local-ignore --help
