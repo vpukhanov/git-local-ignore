@@ -12,29 +12,29 @@ fn main() {
             "Locally exclude files from being tracked by Git (without adding them to .gitignore)",
         )
         .arg(
-            Arg::with_name("force")
+            Arg::new("force")
                 .short('f')
                 .long("force")
                 .about("Ignore any additional prompts, assumes 'yes' as the answer"),
         )
         .arg(
-            Arg::with_name("clear")
+            Arg::new("clear")
                 .conflicts_with_all(&["list", "file"])
                 .short('c')
                 .long("clear")
                 .about("Clear all entries from the exclude file"),
         )
         .arg(
-            Arg::with_name("list")
+            Arg::new("list")
                 .conflicts_with("file")
                 .short('l')
                 .long("list")
                 .about("List all entries in the exclude file"),
         )
         .arg(
-            Arg::with_name("file")
-                .required_unless_one(&["list", "clear"])
                 .index(1)
+            Arg::new("file")
+                //.required_unless_present_any(&["list", "clear"])
                 .multiple(true)
                 .about("Entries to add to the exclude file"),
         )
