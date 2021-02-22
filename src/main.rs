@@ -38,8 +38,8 @@ fn cli_gl() -> App<'static> {
         .arg(
             Arg::new("file")
                 //.required_unless_present_any(&["list", "clear"])
-                .short('f')
-                .long("file")
+                .short('t')
+                .long("target")
                 .multiple(true)
                 //.index(1)
                 .about("Entries to add to the exclude file"),
