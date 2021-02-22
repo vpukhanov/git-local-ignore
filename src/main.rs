@@ -10,8 +10,8 @@ mod git;
 // cli interface
 fn cli_gl() -> App<'static> {
     App::new("git-local-ignore")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author("Vyacheslav P. <vyacheslav.pukhanov@gmail.com>")
+        .version(crate_version!())
+        .author(crate_authors!())
         .about(
             "Locally exclude files from being tracked by Git (without adding them to .gitignore)",
         )
