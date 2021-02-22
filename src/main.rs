@@ -3,6 +3,7 @@ use clap_generate::generators::*;
 use clap_generate::{generate, Generator};
 use std::env;
 use std::io;
+use std::process::exit;
 
 mod cli;
 mod git;
@@ -118,8 +119,53 @@ fn main() {
             _ => panic!("Unknown generator"),
         }
 
-        //if matches.is_present("manual") {
-        // TODO: manual
-        //}
+        if matches.is_present("manual") {
+            match shell {
+              "bash" => print!(
+                "\n{sh}\n{cmd}\n\n{cmt}\n{lx}\n{lxcmd}\n\n{os}\n{oscmd}\n",
+                sh = "Bash:",
+                cmd = "$ source <(git-local-ignore completion --shell bash)",
+                cmt = "# To load completions for each session, execute once:",
+                lx = "Linux:",
+                lxcmd = "$ git-local-ignore completion --shell bash > /etc/bash_completion.d/git-local-ignore",
+                os = "MacOS:",
+                oscmd = "$ git-local-ignore completion --shell bash > /usr/local/etc/bash_completion.d/git-local-ignore",
+                ),
+
+              "elvish" => print!("\n{}\n{}\n", "Documentation not available. Apologies.", "Come back soon...", ),
+
+              "fish" => print!(
+                "\n{sh}\n\n{cmd1}\n\n{cmt}\n{cmd2}\n",
+                sh = "Fish:",
+                cmd1 = "$ git-local-ignore completion --shell fish | source",
+                cmt = "# To load completions for each session, execute once:",
+                cmd2 = "$ git-local-ignore completion --shell fish > ~/.config/fish/completions/git-local-ignore.fish",
+              ),
+
+              "powershell" => print!(
+                "\n{sh}\n\n{cmd1}\n\n{cmt1}\n{cmd2}\n\n{cmt2}\n",
+                sh = "Powershell:",
+                cmd1 = "PS> git-local-ignore completion --shell powershell | Out-String | Invoke-Expression",
+                cmt1 = "# To load completions for every new session, run:",
+                cmd2 = "PS> git-local-ignore completion --shell powershell > git-local-ignore.ps1",
+                cmt2 = "# and source this file from your powershell profile",
+              ),
+
+              "zsh" => print!(
+                "\n{sh}\n\n{cmt1}\n{cmt2}\n{cmd1}\n\n{cmt3}\n{cmd2}\n\n{cmt4}\n",
+                sh = "Zsh:",
+                cmt1 = "# If shell completion is not already enabled in your environment you will need",
+                cmt2 = "# to enable it.  You can execute the following once:",
+                cmd1 = "$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc",
+                cmt3 = "# To load completions for each session, execute once:",
+                cmd2 = "$ git-local-ignore completion --shell zsh > \"${fpath[1]}/_chapulin\"",
+                cmt4 = "# You will need to start a new shell for this setup to take effect",
+              ),
+
+              _ => panic!("Unknown generator"),
+            }
+
+            exit(0);
+        }
     }
 }
