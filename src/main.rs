@@ -1,15 +1,13 @@
-use clap::{crate_authors, crate_version, App, AppSettings, Arg};
+use clap::{crate_authors, crate_version, App, AppSettings, Arg, ArgMatches};
 use clap_generate::generators::*;
 use clap_generate::{generate, Generator};
 use colored::*;
 use std::env;
 use std::io;
-use std::process::exit;
 
 mod cli;
 mod git;
 
-// cli interface
 fn cli_gl() -> App<'static> {
     App::new("git-local-ignore")
         .version(crate_version!())
@@ -17,6 +15,9 @@ fn cli_gl() -> App<'static> {
         .about(
             "Locally exclude files from being tracked by Git (without adding them to .gitignore)",
         )
+        .setting(AppSettings::SubcommandsNegateReqs)
+        .setting(AppSettings::SubcommandPrecedenceOverArg)
+        .setting(AppSettings::VersionlessSubcommands)
         .arg(
             Arg::new("force")
                 .short('f')
@@ -39,19 +40,14 @@ fn cli_gl() -> App<'static> {
         )
         .arg(
             Arg::new("file")
-                //.required_unless_present_any(&["list", "clear"])
-                .short('t')
-                .long("target")
+                .required_unless_present_any(&["list", "clear"])
                 .multiple(true)
-                //.index(1)
+                .index(1)
                 .about("Entries to add to the exclude file"),
         )
         .subcommand(
             App::new("completion")
-                .version(crate_version!())
-                .author(crate_authors!())
-                .setting(AppSettings::Hidden)
-                .about("AutoCompletion")
+                .about("Generate shell autocompletion files")
                 .arg(
                     Arg::new("shell")
                         .short('s')
@@ -62,17 +58,12 @@ fn cli_gl() -> App<'static> {
                         .possible_values(&["bash", "elvish", "fish", "powershell", "zsh"]),
                 )
                 .arg(
-                    Arg::new("manual")
-                        .short('m')
-                        .long("manual")
-                        .about("Display instructions on how to install autocompletions"),
+                    Arg::new("info")
+                        .short('i')
+                        .long("info")
+                        .about("Display instructions on how to install autocompletion"),
                 ),
         )
-}
-
-/// Print completions
-fn print_completions<G: Generator>(app: &mut App) {
-    generate::<G, _>(app, app.get_name().to_string(), &mut io::stdout());
 }
 
 fn main() {
@@ -88,12 +79,12 @@ fn main() {
         );
     });
 
-    //println!(
-    //"Found .git repository in {}",
-    //git_repo.repo_dir.to_str().unwrap()
-    //);
-
     let force = matches.is_present("force");
+
+    if let Some(matches) = matches.subcommand_matches("completion") {
+        generate_autocompletion(matches);
+        return;
+    }
 
     if matches.is_present("clear") {
         cli::clear_exclude_list(&git_repo, force);
@@ -103,64 +94,65 @@ fn main() {
         let files = matches.values_of_lossy("file").unwrap_or_else(|| {
             cli::report_error("No entries to exclude provided");
         });
-
         cli::add_entries_to_exclude_list(&git_repo, &working_dir, &files, force);
     }
+}
 
-    if let Some(matches) = matches.subcommand_matches("completion") {
-        let manual = matches.is_present("manual");
+fn print_completions<G: Generator>(app: &mut App) {
+    generate::<G, _>(app, app.get_name().to_string(), &mut io::stdout());
+}
 
-        let shell = matches.value_of("shell").unwrap();
+fn generate_autocompletion(matches: &ArgMatches) {
+    let info = matches.is_present("info");
 
-        if manual {
-            match shell {
-              "bash" => print!(
+    let shell = matches.value_of("shell").unwrap();
+
+    if info {
+        match shell {
+            "bash" => print!(
                 "\n{sh}\n{cmd}\n\n{cmt}\n{lx}\n{lxcmd}\n\n{os}\n{oscmd}\n",
                 sh = "Bash:".blue().bold(),
-                cmd = "$ source <(chapulin AC --shell bash)".cyan(),
+                cmd = "$ source <(git-local-ignore completion --shell bash)".cyan(),
                 cmt = "# To load completions for each session, execute once:".yellow().dimmed(),
                 lx = "Linux:".green(),
-                lxcmd = "$ chapulin AC --shell bash > /etc/bash_completion.d/chapulin".cyan(),
+                lxcmd = "$ git-local-ignore completion --shell bash > /etc/bash_completion.d/git-local-ignore".cyan(),
                 os = "MacOS:".green(),
-                oscmd = "$ chapulin AC --shell bash > /usr/local/etc/bash_completion.d/chapulin".cyan(),
-                ),
+                oscmd = "$ git-local-ignore completion --shell bash > /usr/local/etc/bash_completion.d/git-local-ignore".cyan(),
+            ),
 
-              "elvish" => print!("\n{}\n{}\n", "Documentation not available. Apologies.".green(), "Come back soon...".cyan(), ),
+            "elvish" => print!("\n{}\n{}\n", "Documentation not available. Apologies.".green(), "Come back soon...".cyan(), ),
 
-              "fish" => print!(
+            "fish" => print!(
                 "\n{sh}\n\n{cmd1}\n\n{cmt}\n{cmd2}\n",
                 sh = "Fish:".blue().bold(),
-                cmd1 = "$ chapulin AC --shell fish | source".cyan(),
+                cmd1 = "$ git-local-ignore completion --shell fish | source".cyan(),
                 cmt = "# To load completions for each session, execute once:".yellow().dimmed(),
-                cmd2 = "$ chapulin AC --shell fish > ~/.config/fish/completions/chapulin.fish".cyan(),
-              ),
+                cmd2 = "$ git-local-ignore completion --shell fish > ~/.config/fish/completions/git-local-ignore.fish".cyan(),
+            ),
 
-              "powershell" => print!(
+            "powershell" => print!(
                 "\n{sh}\n\n{cmd1}\n\n{cmt1}\n{cmd2}\n\n{cmt2}\n",
                 sh = "Powershell:".blue().bold(),
-                cmd1 = "PS> chapulin AC --shell powershell | Out-String | Invoke-Expression".cyan(),
+                cmd1 = "PS> git-local-ignore completion --shell powershell | Out-String | Invoke-Expression".cyan(),
                 cmt1 = "# To load completions for every new session, run:".yellow().dimmed(),
-                cmd2 = "PS> chapulin AC --shell powershell > chapulin.ps1".cyan(),
+                cmd2 = "PS> git-local-ignore completion --shell powershell > git-local-ignore.ps1".cyan(),
                 cmt2 = "# and source this file from your powershell profile".yellow().dimmed(),
-              ),
+            ),
 
-              "zsh" => print!(
+            "zsh" => print!(
                 "\n{sh}\n\n{cmt1}\n{cmt2}\n{cmd1}\n\n{cmt3}\n{cmd2}\n\n{cmt4}\n",
                 sh = "Zsh:".blue().bold(),
                 cmt1 = "# If shell completion is not already enabled in your environment you will need".yellow().dimmed(),
                 cmt2 = "# to enable it.  You can execute the following once:".yellow().dimmed(),
                 cmd1 = "$ echo \"autoload -U compinit; compinit\" >> ~/.zshrc".cyan(),
                 cmt3 = "# To load completions for each session, execute once:".yellow().dimmed(),
-                cmd2 = "$ chapulin AC --shell zsh > \"${fpath[1]}/_chapulin\"".cyan(),
+                cmd2 = "$ git-local-ignore completion --shell zsh > \"${fpath[1]}/_git-local-ignore\"".cyan(),
                 cmt4 = "# You will need to start a new shell for this setup to take effect".yellow().dimmed(),
-              ),
+            ),
 
-              _ => panic!("Unknown generator"),
-            }
-
-            exit(0);
+            _ => panic!("Unknown generator"),
         }
-
+    } else {
         let mut app = cli_gl();
         match shell {
             "bash" => print_completions::<Bash>(&mut app),
