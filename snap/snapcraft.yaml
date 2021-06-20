@@ -1,0 +1,48 @@
+name: git-local-ignore
+base: core20
+version: '1.0.0'
+summary: Exclude files from being tracked by Git (without adding them to .gitignore)
+description: |
+  This command-line utility lets you manipulate .git repository's info/exclude file,
+  which works like .gitignore but is completely local and not included in the repository itself.
+
+  Learn more about .git/info/exclude: https://git-scm.com/docs/gitignore
+
+  Usage:
+
+      # Add files to exclude list
+      git-local-ignore filename1 filename2
+
+      # Add multiple files to exclude list using glob pattern
+      git-local-ignore filename*.txt
+
+      # Add glob pattern itself to exclude list
+      git-local-ignore filename\*.txt
+
+      # Display entries in the exclude list
+      git-local-ignore --list
+
+      # Clear the exclude list
+      git-local-ignore --clear
+
+      # Display help
+      git-local-ignore --help
+
+architectures:
+  - build-on: s390x
+  - build-on: ppc64el
+  - build-on: arm64
+  - build-on: armhf
+  - build-on: amd64
+
+grade: stable
+confinement: classic # git-local-ignore has to be able to access .git directories anywhere in the system
+
+parts:
+  git-local-ignore:
+    plugin: rust
+    source: .
+
+apps:
+  git-local-ignore:
+    command: bin/git-local-ignore
